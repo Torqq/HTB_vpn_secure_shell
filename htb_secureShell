@@ -1,0 +1,113 @@
+#!/bin/bash
+# Author : Torqer
+
+set -euo pipefail
+
+# Colors
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+BLUE='\033[1;34m'
+NC='\033[0m' # No Color
+
+# ========================================
+# HTB VPN SHELL – LOGGING + ISOLATION
+# Author : Torqer
+# ========================================
+
+read -p "Nom de la machine HTB : " MACHINE
+MACHINE=$(echo "$MACHINE" | tr -cd '[:alnum:]-_')
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_DIR="$SCRIPT_DIR/htb_log"
+LOG_FILE="$(date +%F)-${MACHINE}.log"
+LOG_PATH="$LOG_DIR/$LOG_FILE"
+
+mkdir -p "$LOG_DIR"
+
+if [ -e "$LOG_PATH" ]; then
+    echo -e "${RED}[!] ERROR : Log file already existing → $LOG_PATH${NC}"
+    echo -e "${RED}    Remove or rename the file and launch the bash${NC}"
+    exit 1
+fi
+
+touch "$LOG_PATH" || {
+    echo -e "${RED}[!] Cannot create a log file at : $LOG_PATH${NC}"
+    exit 1
+}
+
+if [ ! -w "$LOG_PATH" ]; then
+    echo -e "${RED}[!] Log file not accessible in writing.${NC}"
+    exit 1
+fi
+
+TUN_IP=$(ip -4 addr show tun0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}') || true
+if [ -z "${TUN_IP:-}" ]; then
+    echo -e "${RED}[!] Interface tun0 not find. VPN connected ?${NC}"
+    exit 1
+fi
+
+clear
+echo -e "${BLUE}============================================"
+echo -e "    🔐 ${GREEN}VPN HTB MOD ACTIVATED${NC} (${BLUE}tun0 → $TUN_IP${NC})"
+echo -e "    📄 Log : $LOG_PATH"
+echo -e "    ☢️  Tape ${GREEN}exit${NC} or Ctrl+D to quit"
+echo -e "${BLUE}============================================${NC}"
+echo
+
+# Netowork command temporally redefined
+
+nc() {
+    echo -e "${GREEN}[→] nc via tun0${NC}"
+    echo "[NC] $(date '+%F %T') → nc -s $TUN_IP $*" >> "$LOG_PATH"
+    command nc -s "$TUN_IP" "$@"
+}
+
+curl() {
+    echo -e "${GREEN}[→] curl via tun0${NC}"
+    echo "[CURL] $(date '+%F %T') → curl --interface $TUN_IP $*" >> "$LOG_PATH"
+    command curl --interface "$TUN_IP" "$@"
+}
+
+wget() {
+    echo -e "${GREEN}[→] wget via tun0${NC}"
+    echo "[WGET] $(date '+%F %T') → wget --bind-address=$TUN_IP $*" >> "$LOG_PATH"
+    command wget --bind-address="$TUN_IP" "$@"
+}
+
+nmap() {
+    echo -e "${GREEN}[→] nmap via tun0${NC}"
+    echo "[NMAP] $(date '+%F %T') → nmap -e tun0 $*" >> "$LOG_PATH"
+    command nmap -e tun0 "$@"
+}
+
+ffuf() {
+    echo -e "${GREEN}[→] ffuf via tun0${NC}"
+    echo "[FFUF] $(date '+%F %T') → ffuf -i $TUN_IP $*" >> "$LOG_PATH"
+    command ffuf -i "$TUN_IP" "$@"
+}
+
+hydra() {
+    echo -e "${GREEN}[→] hydra via tun0${NC}"
+    echo "[HYDRA] $(date '+%F %T') → hydra -s $TUN_IP $*" >> "$LOG_PATH"
+    command hydra -S "$@" -s "$TUN_IP"
+}
+
+sqlmap() {
+    echo -e "${GREEN}[→] sqlmap via tun0${NC}"
+    echo "[SQLMAP] $(date '+%F %T') → sqlmap --tor --tor-type=SOCKS5 $*" >> "$LOG_PATH"
+    command sqlmap --tor --tor-type=SOCKS5 "$@"
+}
+
+wpscan() {
+    echo -e "${GREEN}[→] wpscan via tun0${NC}"
+    echo "[WPSCAN] $(date '+%F %T') → wpscan --proxy $TUN_IP:9050 $*" >> "$LOG_PATH"
+    command wpscan --proxy "$TUN_IP:9050" "$@"
+}
+
+# Clean shell with active functions
+bash --norc --noprofile
+
+# Clearing
+unset -f nc curl wget nmap ffuf hydra sqlmap wpscan
+echo
+echo -e "${BLUE}[✓] ${GREEN}VPN HTB MOD DEACTIVATED.${NC} Environment restored."
+echo -e "${BLUE}[ℹ] History saved at :${NC} $LOG_PATH"
