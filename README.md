@@ -37,9 +37,9 @@ Recommended use
 
     Optionally, block all traffic except through tun0 using ufw or iptables for maximum isolation.
 
-# secure_vpn
+# secure_net
 
-secure_vpn is designed to secure and clean up network traces related to common VPN interfaces on a Linux system. It’s useful after a pentest or any sensitive network activity. Specifically, it:
+secure_net is designed to secure and clean up network traces related to common VPN interfaces on a Linux system. It’s useful after a pentest or any sensitive network activity. Specifically, it:
 
     Resets UFW firewall rules associated with VPN interfaces (tun0, wg0, etc.).
 
