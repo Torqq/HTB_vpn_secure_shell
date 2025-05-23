@@ -85,7 +85,7 @@ export HISTFILE=~/.bash_history_session_clean
 history -c
 
 # -------------------------------
-# Journal suppression - désactivée par défaut
+# Journal removing - Activate for 0 logs
 # -------------------------------
 # echo -e "${GREEN}[+] Removing system logs from this session...${RESET}"
 # sudo journalctl --rotate
